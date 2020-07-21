@@ -1,7 +1,7 @@
-ThisBuild / scalaVersion := "2.13.0"
+ThisBuild / scalaVersion := "2.12.12"
 ThisBuild / organization := "com.usama"
 
-val scalaTest = "org.scalatest" %% "scalatest" % "3.0.5"
+val scalaTest = "org.scalatest" %% "scalatest" % "3.2.0"
 val circeVersion = "0.13.0"
 val circeDependencies = Seq(
   "io.circe" %% "circe-core",
@@ -10,8 +10,7 @@ val circeDependencies = Seq(
 ).map(_ % circeVersion)
 
 lazy val root = (project in file("."))
-.enablesPlugins(JavaAppPackaging)
-.settings(
+  .settings(
     name := "AdsRevenue",
     libraryDependencies += scalaTest % Test,
     libraryDependencies ++= circeDependencies,
