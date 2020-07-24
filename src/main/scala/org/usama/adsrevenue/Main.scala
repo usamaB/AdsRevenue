@@ -27,7 +27,7 @@ object Main {
   }
 
   def main(args: Array[String]) =
-    command.parse(args) match {
+    command.parse(args.toIndexedSeq) match {
       case Left(help) =>
         System.err.println(help)
         sys.exit(1)
