@@ -24,3 +24,6 @@ to run the application
 ```bash
 scala AdsRevenue-assembly-0.1-SNAPSHOT.jar -i impressions.json -c clicks.json
 ```
+
+# TBD
+Integration tests
