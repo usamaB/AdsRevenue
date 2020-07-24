@@ -1,6 +1,6 @@
 # AdsRevenue Guide
 ## How to Run
-###parameters 
+### parameters 
 1) -i or --impressions-file-path absolute path of impressions.json
 2) -c or --clicks-file-path absolute path of clicks.json
 3) -o or --output-file-path optional. absolute path of outputfile
