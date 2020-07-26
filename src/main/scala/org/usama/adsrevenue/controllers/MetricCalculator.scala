@@ -1,62 +1,14 @@
-package org.usama.adsrevenue
+package org.usama.adsrevenue.controllers
 
-import java.io.{BufferedWriter, File, FileNotFoundException, FileWriter}
-import scala.io.{BufferedSource, Source}
+import java.io.{BufferedWriter, File, FileWriter}
+
 import io.circe.parser._
 import io.circe.syntax._
 import io.circe.{Decoder, Encoder}
+import org.usama.adsrevenue.models.{Clicks, Impressions, Metric}
+
+import scala.io.Source
 import scala.util.Using
-
-/**
-  * Object representation for Json files and their Encoders/Decoders
-  */
-case class Clicks(impressionId: Option[String], revenue: Option[Double])
-
-case class Impressions(
-    appId: Int,
-    advertiserId: Option[Int],
-    countryCode: Option[String],
-    id: Option[String]
-)
-case class Metric(
-    appId: Int,
-    countryCode: Option[String],
-    impressions: Int,
-    clicks: Int,
-    revenue: Double
-)
-
-object Clicks {
-  implicit val decoder: Decoder[Clicks] =
-    Decoder.forProduct2("impression_id", "revenue")(Clicks.apply)
-}
-
-object Impressions {
-  implicit val decoder: Decoder[Impressions] =
-    Decoder.forProduct4("app_id", "advertiser_id", "country_code", "id")(
-      Impressions.apply
-    )
-}
-
-object Metric {
-  implicit val encoder: Encoder[Metric] =
-    Encoder.forProduct5(
-      "app_id",
-      "country_code",
-      "impressions",
-      "clicks",
-      "revenue"
-    )(metric =>
-      (
-        metric.appId,
-        metric.countryCode,
-        metric.impressions,
-        metric.clicks,
-        metric.revenue
-      )
-    )
-}
-//
 
 object MetricCalculator {
 
@@ -64,7 +16,7 @@ object MetricCalculator {
     * Entry function, calls other functions. Separation of concerns, separate IO from logic.
     * Read/Create files -> calculate metrics -> writes data. Resource Manager takes care of the files.
     */
-  def caltulateMetrics(
+  def generateMetrics(
       clicksFilePath: String,
       impressionsFilePath: String,
       outputFilePath: String
@@ -83,9 +35,10 @@ object MetricCalculator {
     }
   }
 
-  private def getBufferedWriter(path: String) = {
+  private def getBufferedSource(path: String) = Source.fromFile(path)
+
+  private def getBufferedWriter(path: String) =
     new BufferedWriter(new FileWriter(new File(path)))
-  }
 
   /**
     * Writes data in desired format
@@ -108,11 +61,9 @@ object MetricCalculator {
     writer.append(']')
   }
 
-  private def getBufferedSource(path: String) = Source.fromFile(path)
-
   /**
     * Map Json to Case Class
-    * @tparam A Decoder type to decode with impliict decoder available
+    * @tparam A Decoder type to decode with implicit decoder available
     */
   def getDecodedDataFromSource[A: Decoder](
       source: Source
@@ -124,13 +75,14 @@ object MetricCalculator {
 
   /**
     * returns metrics in List[String] format String is Json String.
-    * iterates over distinct values so its considerably less than O(n) if there's more duplicates
+    * iterates over distinct non null(county_code) values so its considerably less than O(n) if there's more duplicates
     */
   def getMetrics(
       impressionsList: List[Impressions],
       clicksList: List[Clicks]
   ): List[String] = {
-    val distinctImpressions = impressionsList.distinct
+    val distinctImpressions =
+      impressionsList.distinct.filter(imp => imp.countryCode.isDefined)
     distinctImpressions.map { impression =>
       val filteredImpressions =
         impressionsList.filter(imp =>
@@ -141,16 +93,14 @@ object MetricCalculator {
         case (count, Impressions(_, _, _, id)) => count + id.size
       }
       val filteredClicksList =
-        clicksList.filter(click =>
-          click.impressionId == impression.id
-        ) // check count for null using foldleft
+        clicksList.filter(click => click.impressionId == impression.id)
       val revenueSum = filteredClicksList.foldLeft(0.0) {
         case (sum, Clicks(_, revenue)) => sum + revenue.getOrElse(0.0)
       }
 
       Metric(
         impression.appId,
-        impression.countryCode,
+        impression.countryCode.getOrElse("null"),
         impressionCount,
         filteredClicksList.size,
         revenueSum
