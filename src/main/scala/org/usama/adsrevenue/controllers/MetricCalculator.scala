@@ -81,9 +81,12 @@ object MetricCalculator {
       impressionsList: List[Impressions],
       clicksList: List[Clicks]
   ): List[String] = {
-    val distinctImpressions =
-      impressionsList.distinct.filter(imp => imp.countryCode.isDefined)
-    distinctImpressions.map { impression =>
+    //Filter Dirty data(nulls, or country_code not defined = empty)
+    val cleanedImpressions =
+      impressionsList.distinct.filter(imp =>
+        imp.countryCode.isDefined && imp.countryCode.getOrElse("") != ""
+      )
+    cleanedImpressions.map { impression =>
       val filteredImpressions =
         impressionsList.filter(imp =>
           imp.appId == impression.appId && imp.countryCode == impression.countryCode
